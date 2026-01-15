@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>🔐 El último deseo del guardián — Escape Room ELE</title>
+  <style>
+    /* ===== Estética: misteriosa, legible, funcional ===== */
+    :root{
+      --bg:#0f0f0f;
+      --panel:#121212;
+      --accent:#c9a66b;
+      --muted:#bdbdbd;
+      --good:#2ecc71;
+      --bad:#e74c3c;
+      --glass: rgba(255,255,255,0.03);
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    html,body{height:100%;margin:0;background:
+      radial-gradient(ellipse at top left, rgba(201,166,107,0.06), transparent 20%),
+      linear-gradient(180deg,#071017 0%,var(--bg) 100%);
+      color:var(--muted);
+    }
+    .container{max-width:1100px;margin:24px auto;padding:24px;background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.55));border-radius:12px;box-shadow:0 6px 30px rgba(0,0,0,0.6);border:1px solid rgba(201,166,107,0.06)}
+    header{display:flex;gap:16px;align-items:center}
+    h1{color:var(--accent);margin:0;font-size:1.6rem}
+    .subtitle{font-size:0.95rem;color:var(--muted)}
+    nav{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap}
+    .room-btn{background:var(--glass);border:1px solid rgba(201,166,107,0.08);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer}
+    .room-btn.active{background:linear-gradient(90deg, rgba(201,166,107,0.12), rgba(201,166,107,0.04));color:#fff}
+    .status{display:flex;gap:12px;margin-left:auto;align-items:center}
+    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:16px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
+    .score{font-weight:700;color:var(--accent);font-size:1.1rem}
+    .progress{font-size:0.9rem;color:var(--muted)}
+    main{margin-top:18px;display:flex;gap:20px}
+    section.room{flex:1;min-height:420px;padding:18px;border-radius:10px;background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.5));border:1px solid rgba(255,255,255,0.02);display:none}
+    section.room.active{display:block}
+    .room h2{color:var(--accent);margin-top:0}
+    .hint-row{display:flex;gap:8px;align-items:center;margin-top:6px}
+    .hint-btn{background:#222;padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);cursor:pointer;color:var(--muted)}
+    .hint-text{margin-top:8px;color:#f3e7d5;background:rgba(0,0,0,0.3);padding:10px;border-radius:8px;border:1px solid rgba(201,166,107,0.06)}
+    .question{margin-top:14px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)}
+    label{display:block;margin-bottom:6px;color:#e9dfc8}
+    input[type="text"]{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.05);background:#0b0b0b;color:var(--muted)}
+    .btn{background:var(--accent);color:#08120f;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;margin-top:8px}
+    .feedback{margin-top:8px;padding:10px;border-radius:8px}
+    .correct{background:linear-gradient(90deg, rgba(46,204,113,0.12), rgba(46,204,113,0.04));border:1px solid rgba(46,204,113,0.12);color:var(--good)}
+    .incorrect{background:linear-gradient(90deg, rgba(231,76,60,0.08), rgba(231,76,60,0.03));border:1px solid rgba(231,76,60,0.08);color:var(--bad)}
+    .choices{display:flex;flex-direction:column;gap:8px}
+    .choice{background:#0d1111;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.02);cursor:pointer}
+    .drag-area{display:flex;gap:8px;flex-wrap:wrap}
+    .draggable{background:#1a1510;padding:8px;border-radius:6px;border:1px dashed rgba(201,166,107,0.12);cursor:grab;color:var(--muted)}
+    .drop-slot{min-width:120px;min-height:40px;background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.04);padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center}
+    footer{margin-top:18px;color:var(--muted);font-size:0.9rem;display:flex;gap:12px;justify-content:space-between;align-items:center}
+    .final-panel{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.45));border:1px solid rgba(255,255,255,0.02)}
+    .teacher-notes{margin-top:18px;background:#081217;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
+    small.muted{color:#888}
+    /* Responsive */
+    @media(max-width:900px){main{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>🔐 El último deseo del guardián</h1>
+        <div class="subtitle">Entra en el santuario y demuestra que dominas el subjuntivo presente. Nivel recomendado: B1–B2</div>
+      </div>
+
+      <div class="status" style="margin-left:auto">
+        <div class="panel">
+          Puntuación: <span id="score" class="score">0</span>
+        </div>
+        <div class="panel">
+          Progreso: <span id="progress" class="progress">0/5 habitaciones</span>
+        </div>
+      </div>
+    </header>
+
+    <nav>
+      <!-- Navegación entre salas -->
+      <button class="room-btn active" data-room="deseo">Sala del Deseo</button>
+      <button class="room-btn" data-room="duda">Sala de la Duda</button>
+      <button class="room-btn" data-room="emocion">Sala de la Emoción</button>
+      <button class="room-btn" data-room="finalidad">Sala de la Finalidad</button>
+      <button class="room-btn" data-room="sala-final">Sala Final</button>
+    </nav>
+
+    <main>
+      <!-- Sala 1: Verbos de deseo e influencia -->
+      <section id="deseo" class="room active">
+        <h2>Sala del Deseo — Verbos de deseo e influencia</h2>
+        <p>El Guardián pide que muestres frases con verbos de deseo y recomendación. Usa el subjuntivo presente cuando corresponda.</p>
+
+        <div class="hint-row">
+          <button class="hint-btn" data-room="deseo" data-hint="1">Pista 1</button>
+          <button class="hint-btn" data-room="deseo" data-hint="2">Pista 2</button>
+          <div style="margin-left:auto"><small class="muted">Pistas disponibles: 2</small></div>
+        </div>
+
+        <!-- Pregunta 1: completar -->
+        <div class="question" data-qid="d1">
+          <label>1) Completa: "Espero que ella _____ (venir) a la ceremonia."</label>
+          <input type="text" id="d1-input" placeholder="Escribe la forma correcta"/>
+          <button class="btn" data-action="submit" data-room="deseo" data-qid="d1">Comprobar</button>
+          <div class="feedback" id="d1-feedback" aria-live="polite"></div>
+        </div>
+
+        <!-- Pregunta 2: elección múltiple (simplificada, sin "sentido de influencia") -->
+        <div class="question" data-qid="d2">
+          <label>2) ¿Cuál es correcta? (Usa subjuntivo con verbos como recomendar)</label>
+          <div class="choices" id="d2-choices">
+            <div class="choice" data-value="1">Te recomiendo que vas temprano.</div>
+            <div class="choice" data-value="2">Te recomiendo que vayas temprano.</div>
+            <div class="choice" data-value="3">Te recomiendo que irás temprano.</div>
+          </div>
+          <div class="feedback" id="d2-feedback"></div>
+        </div>
+
+        <!-- Pregunta 3: arrastrar y soltar (palabras) -->
+        <div class="question" data-qid="d3">
+          <label>3) Arrastra las palabras al espacio para formar una frase correcta (subjuntivo presente).</label>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div class="drag-area" id="d3-pool" style="flex:1">
+              <div class="draggable" draggable="true" data-word="espero">espero</div>
+              <div class="draggable" draggable="true" data-word="que">que</div>
+              <div class="draggable" draggable="true" data-word="tú">tú</div>
+              <div class="draggable" draggable="true" data-word="llegues">llegues</div>
+              <div class="draggable" draggable="true" data-word="pronto">pronto</div>
+            </div>
+            <div style="flex:1">
+              <div class="drop-slot" id="d3-slot">Suelta las palabras aquí</div>
+              <button class="btn" data-action="submit" data-room="deseo" data-qid="d3" style="margin-top:8px">Comprobar</button>
+              <div class="feedback" id="d3-feedback"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sala 2: Duda, negación e incertidumbre -->
+      <section id="duda" class="room">
+        <h2>Sala de la Duda — Duda, negación e incertidumbre</h2>
+        <p>El Guardián pregunta cuándo usamos subjuntivo con expresiones de duda o negación.</p>
+        <div class="hint-row">
+          <button class="hint-btn" data-room="duda" data-hint="1">Pista 1</button>
+          <button class="hint-btn" data-room="duda" data-hint="2">Pista 2</button>
+        </div>
+
+        <!-- Pregunta 1: completar -->
+        <div class="question" data-qid="u1">
+          <label>1) Completa: "No creo que ellos _____ (tener) la respuesta."</label>
+          <input type="text" id="u1-input" placeholder="Escribe la forma correcta"/>
+          <button class="btn" data-action="submit" data-room="duda" data-qid="u1">Comprobar</button>
+          <div class="feedback" id="u1-feedback"></div>
+        </div>
+
+        <!-- Pregunta 2: elección múltiple con explicación -->
+        <div class="question" data-qid="u2">
+          <label>2) Señala la frase que expresa certeza (no subjuntivo).</label>
+          <div class="choices" id="u2-choices">
+            <div class="choice" data-value="1">Dudo que María venga.</div>
+            <div class="choice" data-value="2">Es obvio que María viene.</div>
+            <div class="choice" data-value="3">No estoy seguro de que María viene.</div>
+          </div>
+          <div class="feedback" id="u2-feedback"></div>
+        </div>
+
+        <!-- Pregunta 3: descifrar mensaje (simplificado, menos palabras) -->
+        <div class="question" data-qid="u3">
+          <label>3) Completa las vocales: "N cr__ q__ __ll__s t__ng_n l_ r__sp__st_" → Escribe la frase completa.</label>
+          <input type="text" id="u3-input" placeholder="Escribe la frase completa"/>
+          <button class="btn" data-action="submit" data-room="duda" data-qid="u3">Comprobar</button>
+          <div class="feedback" id="u3-feedback"></div>
+        </div>
+      </section>
+
+      <!-- Sala 3: Emoción -->
+      <section id="emocion" class="room">
+        <h2>Sala de la Emoción — Sentimientos y reacciones</h2>
+        <p>Usa el subjuntivo con expresiones que muestran emociones o reacciones.</p>
+        <div class="hint-row">
+          <button class="hint-btn" data-room="emocion" data-hint="1">Pista 1</button>
+          <button class="hint-btn" data-room="emocion" data-hint="2">Pista 2</button>
+        </div>
+
+        <!-- Pregunta 1: elección múltiple -->
+        <div class="question" data-qid="e1">
+          <label>1) ¿Cuál completa mejor: "Me alegra que _____ (tú / aprobar) el examen"?</label>
+          <div class="choices" id="e1-choices">
+            <div class="choice" data-value="1">tú apruebas</div>
+            <div class="choice" data-value="2">tú apruebes</div>
+            <div class="choice" data-value="3">tú aprobarás</div>
+          </div>
+          <div class="feedback" id="e1-feedback"></div>
+        </div>
+
+        <!-- Pregunta 2: completar (cambiado a "yo" para claridad de sujeto) -->
+        <div class="question" data-qid="e2">
+          <label>2) Completa: "Siento que yo no _____ (poder) venir mañana."</label>
+          <input type="text" id="e2-input" placeholder="Escribe la forma correcta"/>
+          <button class="btn" data-action="submit" data-room="emocion" data-qid="e2">Comprobar</button>
+          <div class="feedback" id="e2-feedback"></div>
+        </div>
+
+        <!-- Pregunta 3: ordenar (simplificado, menos sociopragmático) -->
+        <div class="question" data-qid="e3">
+          <label>3) Ordena las palabras: [que / me gusta / tú / vengas]</label>
+          <div class="choices" id="e3-choices">
+            <div class="choice" data-value="1">Me gusta que tú vengas.</div>
+            <div class="choice" data-value="2">Que me gusta tú vengas.</div>
+            <div class="choice" data-value="3">Tú vengas me gusta que.</div>
+          </div>
+          <div class="feedback" id="e3-feedback"></div>
+        </div>
+      </section>
+
+      <!-- Sala 4: Finalidad -->
+      <section id="finalidad" class="room">
+        <h2>Sala de la Finalidad — "para que / a fin de que"</h2>
+        <p>Demuestra que sabes usar oraciones de finalidad que requieren subjuntivo.</p>
+        <div class="hint-row">
+          <button class="hint-btn" data-room="finalidad" data-hint="1">Pista 1</button>
+          <button class="hint-btn" data-room="finalidad" data-hint="2">Pista 2</button>
+        </div>
+
+        <!-- Pregunta 1: completar (ahora permite escribir la frase completa) -->
+        <div class="question" data-qid="f1">
+          <label>1) Completa la frase: "Traje el mapa _____ (para que tú / saber) el camino."</label>
+          <input type="text" id="f1-input" placeholder="Escribe la frase completa"/>
+          <button class="btn" data-action="submit" data-room="finalidad" data-qid="f1">Comprobar</button>
+          <div class="feedback" id="f1-feedback"></div>
+        </div>
+
+        <!-- Pregunta 2: elección múltiple -->
+        <div class="question" data-qid="f2">
+          <label>2) Señala la opción que explica el uso de subjuntivo en la finalidad:</label>
+          <div class="choices" id="f2-choices">
+            <div class="choice" data-value="1">Porque indica una causa.</div>
+            <div class="choice" data-value="2">Porque expresa el propósito o la intención.</div>
+            <div class="choice" data-value="3">Porque indica una consecuencia.</div>
+          </div>
+          <div class="feedback" id="f2-feedback"></div>
+        </div>
+
+        <!-- Pregunta 3: elige la conjunción correcta (cambiado a requerir subjuntivo) -->
+        <div class="question" data-qid="f3">
+          <label>3) Elige la conj
